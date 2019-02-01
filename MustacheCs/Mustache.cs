@@ -546,6 +546,12 @@ namespace MustacheCs
         */
         public class Writer {
             Dictionary<string, List<Token>> _cache = new Dictionary<string, List<Token>>();
+            IFormatProvider _provider;
+
+            public Writer(IFormatProvider provider = null)
+            {
+                _provider = provider ?? CultureInfo.InvariantCulture;
+            }
 
             /**
             * Clears all cached templates in this writer.
@@ -695,7 +701,7 @@ namespace MustacheCs
                     var format = token.Formatting();
                     var formatted = string.IsNullOrEmpty(format)
                                         ? (string)value
-                                        : string.Format(CultureInfo.InvariantCulture, token.Formatting(), value);
+                                        : string.Format(_provider, token.Formatting(), value);
                     return formatted;
                 }
                 return null;
@@ -707,7 +713,7 @@ namespace MustacheCs
                     var format = token.Formatting();
                     var formatted = string.IsNullOrEmpty(format)
                                         ? value.ToString()
-                                        : string.Format(CultureInfo.InvariantCulture, token.Formatting(), value);
+                                        : string.Format(_provider, token.Formatting(), value);
                     return System.Security.SecurityElement.Escape(formatted);
                 }
                 return null;
