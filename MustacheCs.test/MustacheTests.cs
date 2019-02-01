@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections;
+﻿using NUnit.Framework;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework;
-
 using RenderLambdaType = System.Func<string, System.Func<string, string>, string>;
 
 namespace MustacheCs.Test
@@ -38,6 +35,11 @@ namespace MustacheCs.Test
             public int aNumber = 13;
         }
 
+        private class WithDecimal
+        {
+            public decimal Number { get; set; }
+        }
+
         [Test]
         public void Tutorial()
         {
@@ -49,6 +51,31 @@ namespace MustacheCs.Test
             var output = Mustache.render("{{title}} spends {{calc}}", view);
             Assert.AreEqual("Joe spends 6", output);
         }
+
+        [Test]
+        public void Format()
+        {
+            var view = new WithDecimal()
+            {
+                Number = 12345.0123M
+            };
+
+            var output = Mustache.render("{{Number:F}}", view);
+            Assert.AreEqual("12345.01", output);
+        }
+
+        [Test]
+        public void Position()
+        {
+            var view = new WithDecimal()
+            {
+                Number = 12345.0123M
+            };
+
+            var output = Mustache.render("{{Number,10:F}}", view);
+            Assert.AreEqual("  12345.01", output);
+        }
+
 
         [Test]
         public void Unescape()

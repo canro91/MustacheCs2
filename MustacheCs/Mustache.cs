@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace MustacheCs
@@ -20,6 +20,23 @@ namespace MustacheCs
             public int end { get; set; }
             public List<Token> subTokens { get; set; }
             public int endSection { get; set; }
+            public string alignment { get; set; }
+            public string format { get; set; }
+
+            public string Formatting() {
+                if (string.IsNullOrEmpty(alignment) && string.IsNullOrEmpty(format))
+                    return null;
+
+                var formatting = "{0";
+                if (!String.IsNullOrWhiteSpace(alignment)) {
+                    formatting += $",{alignment}";
+                }
+                if (!String.IsNullOrWhiteSpace(format)) {
+                    formatting += $":{format}";
+                }
+                formatting += "}";
+                return formatting;
+            }
         }
 
         public class Tags
@@ -186,10 +203,12 @@ namespace MustacheCs
             Regex openingTagRe = null;
             Regex closingTagRe = null;
             Regex closingCurlyRe = null;
+            Regex formatStringRe = null;
             Action<Tags> compileTags = delegate(Tags tagsToCompile) {
                 openingTagRe = new Regex(Regex.Escape(tagsToCompile.opener) + "\\s*");
                 closingTagRe = new Regex("\\s*" + Regex.Escape(tagsToCompile.closer));
                 closingCurlyRe = new Regex("\\s*" + Regex.Escape('}' + tagsToCompile.closer));
+                formatStringRe = new Regex(@"(,(?<alignment>.*))|(:(?<format>.*))|(,(?<alignment>.*):(?<format>.*))");
             };
 
             if (tags == null)
@@ -258,7 +277,17 @@ namespace MustacheCs
                 if (scanner.scan(closingTagRe).Count() == 0)
                     throw new Exception("Unclosed tag at " + scanner._pos);
 
-                var token = new Token{type=type, value=value, start=start, end=scanner._pos};
+                string alignment = null;
+                string format = null;
+                var match = formatStringRe.Match(value);
+                if (match.Success)
+                {
+                    alignment = match.Groups["alignment"].Value;
+                    format = match.Groups["format"].Value;
+                    value = value.Remove(match.Index);
+                }
+
+                var token = new Token { type = type, value = value, start = start, end = scanner._pos, alignment = alignment, format = format };
                 tokens.Add(token);
                 if (type == "#" || type == "^") {
                    sections.Push(token);
@@ -662,15 +691,25 @@ namespace MustacheCs
 
             string unescapedValue (Token token, Context context) {
                 var value = context.lookup(token.value);
-                if (value != null)
-                    return (string)value;
+                if (value != null) {
+                    var format = token.Formatting();
+                    var formatted = string.IsNullOrEmpty(format)
+                                        ? (string)value
+                                        : string.Format(CultureInfo.InvariantCulture, token.Formatting(), value);
+                    return formatted;
+                }
                 return null;
             }
 
             string escapedValue (Token token, Context context) {
                 var value = context.lookup(token.value);
-                if (value != null)
-                    return System.Security.SecurityElement.Escape(value.ToString());
+                if (value != null) {
+                    var format = token.Formatting();
+                    var formatted = string.IsNullOrEmpty(format)
+                                        ? value.ToString()
+                                        : string.Format(CultureInfo.InvariantCulture, token.Formatting(), value);
+                    return System.Security.SecurityElement.Escape(formatted);
+                }
                 return null;
             }
 
