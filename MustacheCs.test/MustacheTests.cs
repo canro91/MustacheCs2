@@ -76,6 +76,31 @@ namespace MustacheCs.Test
             Assert.AreEqual("  12345.01", output);
         }
 
+        [Test]
+        public void Zero()
+        {
+            var view = new WithDecimal
+            {
+                Number = 0
+            };
+
+            var output = Mustache.render("{{#Number}}Something{{/Number}}Nothing", view);
+
+            Assert.AreEqual("Nothing", output);
+        }
+
+        [Test]
+        public void EmptyString()
+        {
+            var view = new MyView
+            {
+                title = ""
+            };
+
+            var output = Mustache.render("{{#title}}Something{{/title}}Nothing", view);
+
+            Assert.AreEqual("Nothing", output);
+        }
 
         [Test]
         public void Unescape()

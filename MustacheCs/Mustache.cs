@@ -641,7 +641,18 @@ namespace MustacheCs
                     return render(template, context, partials);
                 };
 
-                if (value == null || value is bool && !(bool)value)
+                if (value == null || (value is string && string.IsNullOrEmpty((string)value))
+                        || (value is bool && !(bool)value)
+                        || (value is byte && (byte)value == 0)
+                        || (value is short && (short)value == 0)
+                        || (value is ushort && (ushort)value == 0)
+                        || (value is int && (int)value == 0)
+                        || (value is uint && (uint)value == 0)
+                        || (value is long && (long)value == 0)
+                        || (value is ulong && (ulong)value == 0)
+                        || (value is float && (float)value == 0)
+                        || (value is double && (double)value == 0)
+                        || (value is decimal && (decimal)value == 0))
                     return ""; // this would have returned null/undefined instead of a string in JS version?
 
                 //if (isArray(value)) {
